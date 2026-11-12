@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:18
+    container_name: odc-db
+    env_file: .env
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - odc-db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: odc-backend
+    env_file: .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  odc-db-data:
