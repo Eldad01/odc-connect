@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -68,6 +69,13 @@ public class GestionnaireErreurs {
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ReponseErreur> methodeRefusee(HttpRequestMethodNotSupportedException e) {
         return reponse(HttpStatus.METHOD_NOT_ALLOWED, "Méthode " + e.getMethod() + " non autorisée sur cette adresse.");
+    }
+
+    /** 409 : la base refuse l'opération (doublon, élément encore utilisé). */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ReponseErreur> conflitBase(DataIntegrityViolationException e) {
+        journal.warn("Contrainte de la base non respectée : {}", e.getMostSpecificCause().getMessage());
+        return reponse(HttpStatus.CONFLICT, "Opération impossible : elle entre en conflit avec des données existantes.");
     }
 
     /** 500 : erreur imprévue. Le détail va dans les journaux, jamais dans la réponse. */
